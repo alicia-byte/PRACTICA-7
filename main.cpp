@@ -1,29 +1,31 @@
 #include <Arduino.h>
 
-#include "AudioGeneratorAAC.h" 
-#include "AudioOutputI2S.h" 
-#include "AudioFileSourcePROGMEM.h" 
-#include "sampleaac.h" 
+#include "Audio.h" 
+#include "SD.h" 
+#include "FS.h" 
+// Digital I/O used 
+#define SD_CS        10  
+#define SPI_MOSI     11
+#define SPI_MISO     13  
+#define SPI_SCK      12 
+#define I2S_DOUT     47
+#define I2S_BCLK     20
+#define I2S_LRC      21
+Audio audio; 
 
-AudioFileSourcePROGMEM *in; 
-AudioGeneratorAAC *aac; 
-AudioOutputI2S *out; 
 void setup(){ 
+pinMode(SD_CS, OUTPUT); 
+digitalWrite(SD_CS, HIGH); 
+SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI); 
 Serial.begin(115200); 
-in = new AudioFileSourcePROGMEM(sampleaac, sizeof(sampleaac)); 
-aac = new AudioGeneratorAAC(); 
-out = new AudioOutputI2S(); 
-out -> SetGain(0.125); 
-out -> SetPinout(20,21,47);
+SD.begin(SD_CS); 
+audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT); 
+audio.setVolume(10); // 0...21 
 
-aac->begin(in, out); 
+audio.connecttoFS(SD, "bass-wiggle-297877.wav"); 
 } 
+ 
 void loop(){ 
-if (aac->isRunning()) { 
-aac->loop(); 
-} else { 
-aac -> stop(); 
-Serial.printf("Sound Generator\n"); 
-delay(1000); 
+    audio.loop(); 
 } 
-} 
+ 
